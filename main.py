@@ -50,26 +50,29 @@ if __name__ == "__main__":
     print(engine.start_game())
     input("按回车键开始冒险...")
 
-    while not engine.game_over:
-        scenario = engine.get_current_scenario()
-        print(f"\n--- 第 {engine.current_round + 1} 回合 ---")
-        print(scenario["story"])
-        print("A:", scenario["A"]["text"])
-        print("B:", scenario["B"]["text"])
+    # 在 main.py 的游戏循环中
+while not engine.game_over:
+    scenario = engine.get_current_scenario()  # 获取本轮数据（用于显示选项）
+    print(f"\n--- 第 {engine.current_round + 1} 回合 ---")
+    print(scenario["story"])                # 修改这里
+    print("A:", scenario["A"]["text"])
+    print("B:", scenario["B"]["text"])
 
-        while True:
-            choice = input("请选择 A 或 B: ").strip().upper()
-            if choice in ["A", "B"]:
-                break
-            print("输入无效，请重新输入")
-
-        finished, story, optA, optB, effect, new_state = engine.process_turn(choice)
-        print(f"\n变化：{effect}")
-        print(f"当前状态：{new_state}")
-
-        if finished:
-            final = engine.get_final_state()
-            print("\n========== 游戏结束 ==========")
-            print(f"结局：{final['ending']}")
-            save_ending(final['player'], final['ending'])
+    while True:
+        choice = input("请选择 A 或 B: ").strip().upper()
+        if choice in ["A", "B"]:
             break
+        print("输入无效，请重新输入")
+
+    finished, opening, immediate_story, effect, new_state = engine.process_turn(choice)
+    print(f"\n{immediate_story}")
+    if effect:
+        print(f"属性变化：{effect}")
+    print(f"当前状态：{new_state}")
+
+    if finished:
+        final = engine.get_final_state()
+        print("\n========== 游戏结束 ==========")
+        print(f"结局：{final['ending']}")
+        save_ending(final['player'], final['ending'])
+        break

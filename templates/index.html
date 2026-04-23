@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>pro_me vs AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', system-ui, sans-serif; }
+        body { background: linear-gradient(145deg, #e9eef3 0%, #dbe2ea 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 24px; }
+        .game-container { width: 100%; max-width: 1100px; background-color: #ffffff; border-radius: 2rem; box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2); padding: 28px 32px 36px; display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: auto 1fr auto; gap: 24px; }
+        
+        .header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 12px 28px; border-radius: 48px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.25s ease; border: none; color: white; letter-spacing: 0.5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+        .start-btn { background: linear-gradient(135deg, #3c7ed9, #2b5bb5); }
+        .btn:hover { transform: translateY(-3px); filter: brightness(1.02); }
+
+        .main-left { grid-column: 1 / 2; display: flex; flex-direction: column; gap: 20px; }
+        .text-display { background: #fff7ed; border-radius: 24px; padding: 26px; min-height: 300px; font-size: 1.05rem; line-height: 1.65; color: #2c3e2f; border: 1px solid #ffdead; box-shadow: inset 0 0 0 1px #fffef7; white-space: pre-wrap; position: relative; overflow-y: auto; }
+        .text-display::before { content: "“"; font-size: 3rem; color: #ffcd94; position: absolute; left: 12px; top: -5px; opacity: 0.4; }
+        
+        .log-area { background: #f8f9fa; border-radius: 20px; padding: 16px; height: 150px; overflow-y: auto; border: 1px solid #e9ecef; font-size: 0.9rem; color: #555; }
+        .log-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ddd; }
+
+        .sidebar { grid-column: 2 / 3; display: flex; flex-direction: column; gap: 24px; }
+        .user-info { background: #f1effa; border-radius: 28px; padding: 22px; border: 1px solid #ddd2f0; }
+        .stats { background: #eef5ff; border-radius: 28px; padding: 22px; border: 1px solid #cde2fc; }
+        .info-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 18px; color: #4a3b6e; border-left: 5px solid #8b74e8; padding-left: 14px; }
+        .stat-item { display: flex; justify-content: space-between; padding: 14px 6px; border-bottom: 1px solid rgba(100, 108, 145, 0.2); }
+        .stat-value { font-weight: 700; color: #1f6392; background: #ffffffba; padding: 4px 12px; border-radius: 60px; }
+
+        .options-area { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 18px; }
+        .option-btn { width: 100%; padding: 18px; border-radius: 60px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.25s; border: none; text-align: center; }
+        .option-a { background: #fefaf5; color: #b45f2b; border: 2px solid #fad6a5; }
+        .option-b { background: linear-gradient(115deg, #ffb7c5, #ff9aae); color: white; }
+        .option-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -8px rgba(0,0,0,0.15); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 90%; max-width: 450px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal input[type="text"], .modal input[type="number"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 12px; font-size: 1rem; }
+        .modal-btn { padding: 10px 24px; background: #3c7ed9; color: white; border: none; border-radius: 40px; cursor: pointer; margin: 5px; }
+        .secondary-btn { background: #7b68ee; }
+        .attr-row { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
+        .attr-row label { font-weight: bold; color: #4a3b6e; }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="header">
+        <button class="btn start-btn" onclick="showNameModal()">开始新的故事</button>
+    </div>
+
+    <div class="main-left">
+        <div class="text-display" id="storyText">点击左上角按钮，开启你的故事...</div>
+        <div class="log-area" id="logArea">
+            <div class="log-item">等待游戏开始...</div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="user-info">
+            <div class="info-title" id="playerNameDisplay">能工智人</div>
+            <div class="info-item" id="roundInfo">未开始</div>
+        </div>
+        <div class="stats">
+            <div class="info-title">当前属性</div>
+            <div class="stat-item"><span class="stat-name">财富</span><span class="stat-value" id="stat-wealth">50</span></div>
+            <div class="stat-item"><span class="stat-name">能力</span><span class="stat-value" id="stat-skill">50</span></div>
+            <div class="stat-item"><span class="stat-name">健康</span><span class="stat-value" id="stat-health">50</span></div>
+            <div class="stat-item"><span class="stat-name">运气</span><span class="stat-value" id="stat-luck">50</span></div>
+        </div>
+    </div>
+
+    <div class="options-area" id="optionsPanel" style="visibility: hidden;">
+        <!-- 选项将通过 JS 动态插入 -->
+    </div>
+</div>
+
+<!-- 名字输入弹窗 -->
+<div class="modal" id="nameModal">
+    <div class="modal-content">
+        <h3>请输入你的名字</h3>
+        <input type="text" id="nameInput" placeholder="例如：人类1号">
+        <button class="modal-btn" onclick="showAttrModal()">下一步</button>
+    </div>
+</div>
+
+<!-- 属性设置弹窗 -->
+<div class="modal" id="attrModal">
+    <div class="modal-content">
+        <h3>设定初始属性 (0-100)</h3>
+        <div class="attr-row"><label>财富:</label><input type="number" id="attr-wealth" value="50" min="0" max="100"></div>
+        <div class="attr-row"><label>能力:</label><input type="number" id="attr-skill" value="50" min="0" max="100"></div>
+        <div class="attr-row"><label>健康:</label><input type="number" id="attr-health" value="50" min="0" max="100"></div>
+        <div class="attr-row"><label>运气:</label><input type="number" id="attr-luck" value="50" min="0" max="100"></div>
+        <div style="margin-top: 20px;">
+            <button class="modal-btn secondary-btn" onclick="randomizeAttrs()">随机生成</button>
+            <button class="modal-btn" onclick="confirmStart()">确认出发</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let sessionId = null;
+    let gameFinished = false;
+    let playerName = '';
+
+    function showNameModal() { document.getElementById('nameModal').style.display = 'flex'; }
+    function showAttrModal() { 
+        playerName = document.getElementById('nameInput').value || '普通人';
+        document.getElementById('nameModal').style.display = 'none';
+        document.getElementById('attrModal').style.display = 'flex'; 
+    }
+
+    function randomizeAttrs() {
+        document.getElementById('attr-wealth').value = Math.floor(Math.random() * 101);
+        document.getElementById('attr-skill').value = Math.floor(Math.random() * 101);
+        document.getElementById('attr-health').value = Math.floor(Math.random() * 101);
+        document.getElementById('attr-luck').value = Math.floor(Math.random() * 101);
+    }
+
+    async function confirmStart() {
+        const wealth = parseInt(document.getElementById('attr-wealth').value);
+        const skill = parseInt(document.getElementById('attr-skill').value);
+        const health = parseInt(document.getElementById('attr-health').value);
+        const luck = parseInt(document.getElementById('attr-luck').value);
+        document.getElementById('attrModal').style.display = 'none';
+        
+        try {
+            const res = await fetch('/api/new_game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: playerName, wealth, skill, health, luck })
+            });
+            const data = await res.json();
+            sessionId = data.session_id;
+            
+            document.getElementById('playerNameDisplay').innerText = `能工智人·${data.player.name}`;
+            updateStats(data.player);
+            
+            window.cachedFirstScenario = data.first_scenario;
+            window.totalRounds = data.total_rounds;
+
+            // 显示背景故事
+            document.getElementById('storyText').innerText = data.opening;
+            document.getElementById('roundInfo').innerText = `序幕 · 准备启程`;
+            
+            const optionsPanel = document.getElementById('optionsPanel');
+            optionsPanel.style.visibility = 'visible';
+            optionsPanel.innerHTML = `<button class="option-btn" style="background: linear-gradient(135deg, #3c7ed9, #2b5bb5); color: white;" onclick="renderFirstTurn()">开启冒险旅程</button>`;
+            
+            addLog(`游戏开始！欢迎来到 ${playerName} 的故事。`);
+        } catch(err) { console.error(err); alert('启动失败'); }
+    }
+
+    function renderFirstTurn() {
+        if (!window.cachedFirstScenario) return;
+        
+        const scenario = window.cachedFirstScenario;
+        document.getElementById('storyText').innerText = scenario.story;
+        document.getElementById('roundInfo').innerText = `第 1 / ${window.totalRounds} 回合`;
+        
+        const optionsPanel = document.getElementById('optionsPanel');
+        optionsPanel.innerHTML = `
+            <button class="option-btn option-a" onclick="sendChoice('A')">A: <span id="opt-a-text">${scenario.A.text}</span></button>
+            <button class="option-btn option-b" onclick="sendChoice('B')">B: <span id="opt-b-text">${scenario.B.text}</span></button>
+        `;
+        addLog(`进入第 1 回合。`);
+    }
+
+    async function sendChoice(choice) {
+        if (gameFinished) return;
+        
+        const storyDiv = document.getElementById('storyText');
+        // 1. 显示加载提示，暂时保留当前内容以便用户回味
+        storyDiv.innerHTML += '<br><span style="color: #888; font-style: italic; display: block; margin-top: 10px;">正在生成新剧情……</span>';
+        storyDiv.scrollTop = storyDiv.scrollHeight;
+        
+        try {
+            const res = await fetch('/api/choice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, choice: choice })
+            });
+            const data = await res.json();
+            
+            updateStats(data.new_state);
+            document.getElementById('roundInfo').innerText = `第 ${data.current_round} / ${data.total_rounds} 回合`;
+            
+            // 记录日志
+            const optText = choice === 'A' ? document.getElementById('opt-a-text')?.innerText : document.getElementById('opt-b-text')?.innerText;
+            let logMsg = `第${data.current_round}回合：选择了 ${optText || choice}`;
+            if (data.effect && Object.keys(data.effect).length) {
+                const changes = Object.entries(data.effect).map(([k, v]) => `${k}${v >= 0 ? '+' : ''}${v}`).join(', ');
+                logMsg += ` | 变化: ${changes}`;
+            }
+            addLog(logMsg);
+
+            if (data.finished) {
+                gameFinished = true;
+                document.getElementById('optionsPanel').style.visibility = 'hidden';
+                storyDiv.innerText = `${data.immediate_story || ''}\n\n——————————\n\n结局\n${data.ending}`;
+                addLog('游戏结束。');
+            } else if (data.next_scenario) {
+                // 2. 核心逻辑：清理旧背景，保留反馈并衔接新故事
+                let content = "";
+                
+                // 第一部分：上一轮选择的结果（保留这段剧情）
+                if (data.immediate_story) {
+                    content += `${data.immediate_story}\n`;
+                }
+                
+                // 第二部分：分隔线与新事件
+                content += `\n——————————\n\n${data.next_scenario.story}`;
+                
+                storyDiv.innerText = content;
+
+                // 更新下一回合的选项
+                const optionsPanel = document.getElementById('optionsPanel');
+                optionsPanel.innerHTML = `
+                    <button class="option-btn option-a" onclick="sendChoice('A')">A: <span id="opt-a-text">${data.next_scenario.A.text}</span></button>
+                    <button class="option-btn option-b" onclick="sendChoice('B')">B: <span id="opt-b-text">${data.next_scenario.B.text}</span></button>
+                `;
+            }
+        } catch(err) { 
+            console.error(err); 
+            storyDiv.innerText += '\n\n[网络错误，请刷新页面]';
+        }
+    }
+
+    function updateStats(player) {
+        document.getElementById('stat-wealth').innerText = player.wealth;
+        document.getElementById('stat-skill').innerText = player.skill;
+        document.getElementById('stat-health').innerText = player.health;
+        document.getElementById('stat-luck').innerText = player.luck;
+    }
+
+    function addLog(text) {
+        const log = document.getElementById('logArea');
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.innerText = text;
+        log.prepend(item);
+    }
+</script>
+</body>
+</html>
