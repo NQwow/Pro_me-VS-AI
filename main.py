@@ -72,7 +72,7 @@ while not engine.game_over:
 
     if finished:
         final = engine.get_final_state()
-        print("\n========== 游戏结束 ==========")
+        print("\n—————————————— 游戏结束 ————————————————")
         print(f"结局：{final['ending']}")
         save_ending(final['player'], final['ending'])
         break
