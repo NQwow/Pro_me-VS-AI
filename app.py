@@ -12,6 +12,11 @@ CORS(app)
 
 games = {}
 
+@app.route('/favicon.ico')
+def favicon():
+    """返回空的 favicon 响应，避免 404 错误"""
+    return '', 204
+
 @app.route('/')
 def index():
     return render_template('index.html')
