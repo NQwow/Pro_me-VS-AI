@@ -106,9 +106,6 @@ def make_choice():
     
     return jsonify(result)
 
-    app.run(debug=True, port=5000)  #启动开发服务器
-
->>>>>>> Stashed changes
 if __name__ == '__main__':
     db.init_db()
     app.run(host='0.0.0.0', port=5000, debug=False)
