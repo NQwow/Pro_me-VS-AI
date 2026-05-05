@@ -1,28 +1,26 @@
-class Player:
-    def __init__(self, name, wealth, skill, health, luck):
-        self.name = name
-        self.wealth = wealth
+class Player:   # 玩家这个类
+    def __init__(self, name, wealth, skill, health, luck):  # 自动运行的
+        self.name = name    #我自己的名字是名字，指向自己
+        self.wealth = wealth    #创建实例本身
         self.skill = skill
         self.health = health
         self.luck = luck
 
-    def apply_effect(self, effect):
+    def apply_effect(self, effect): # 应用效果
         for attr, delta in effect.items():
             current = getattr(self, attr)
             new_value = current + delta
-            # 钳制到 0~100，但允许 0 存在（后续会判定死亡）
             if new_value < 0:
                 new_value = 0
             elif new_value > 100:
                 new_value = 100
             setattr(self, attr, new_value)
 
-    def is_alive(self):
-        """返回 True 表示所有属性都大于 0"""
+    def is_alive(self): # 判断是否还活着
         return (self.wealth > 0 and self.skill > 0 and 
                 self.health > 0 and self.luck > 0)
 
-    def to_dict(self):
+    def to_dict(self):  # 字典
         return {
             "name": self.name,
             "wealth": self.wealth,
@@ -31,5 +29,5 @@ class Player:
             "luck": self.luck
         }
 
-    def __repr__(self):
+    def __repr__(self): # 打印
         return f"Player(名字={self.name},财富={self.wealth},能力={self.skill},健康={self.health},运气={self.luck})"

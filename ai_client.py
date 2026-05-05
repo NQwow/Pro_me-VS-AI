@@ -7,18 +7,18 @@ from openai import OpenAI
 
 load_dotenv()
 
-# 智谱 AI 配置（ glm-4-flash）
-ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY")
+ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY")  
+    #智谱AI配置（glm-4-flash）
 if ZHIPU_API_KEY:
     client = OpenAI(
         api_key=ZHIPU_API_KEY,
         base_url="https://open.bigmodel.cn/api/paas/v4/"
     )
     MODEL_NAME = "glm-4-flash"  
-    print(f"已启用智谱 AI API (模型: {MODEL_NAME})")
+    print(f"已启用智谱AI API (模型: {MODEL_NAME})")
 else:
     client = None
-    print("未配置 ZHIPU_API_KEY，将使用模拟剧情。")
+    print("未配置ZHIPU_API_KEY将使用模拟剧情。")
 
 def is_available():
     return client is not None
@@ -44,16 +44,16 @@ def generate_opening(player):
         return _get_default_opening(player)
     try:
         prompt = f"""请根据以下设定，生成一段 150 字以内的开场白（直接输出文本，不要 JSON）：
-【世界观】
+世界观:
 全世界所有人的 Python 编程能力下降为原来的 1%，唯独 {player.name} 的能力保持不变。与此同时，AI 技术突然爆发，各种 AI 工具涌现。
-【玩家初始属性】（此处不要修改角色属性）
+玩家初始属性（此处不要修改角色属性）:
 财富 {player.wealth}，能力 {player.skill}，健康 {player.health}，运气 {player.luck}
 
 请描写 {player.name} 醒来后感受到的世界变化（与 Python 能力或 AI 爆发相关）。"""
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
+            temperature=0.7,#要有创意但也要在规定框架内
             max_tokens=500,
         )
         text = response.choices[0].message.content.strip()
@@ -66,22 +66,22 @@ def _build_prompt(player, round_num, memory, last_choice_result):
     # 3-流程进行中……
     return f"""你是一个文字冒险游戏的故事生成器。请严格输出 JSON，不要加解释。
 
-【世界观】
+世界观:
 一觉醒来，全世界所有人的 Python 编程能力下降为原来的 1%（能力值从 100 变成 1），唯独玩家 {player.name} 能力不变。与此同时，AI 技术突然爆发，各种 AI 工具涌现。玩家既拥有稀有技能，又面临未知风险。
 
-【当前状态】
+当前状态:
 玩家：{player.name}
 财富 {player.wealth}，能力 {player.skill}，健康 {player.health}，运气 {player.luck}
 当前是第 {round_num} 回合，共 5 回合。
 
-【之前剧情摘要】
+之前剧情摘要:
 {memory if memory else "（无）"}
 
-【上一轮选择的结果】
+上一轮选择的结果:
 {last_choice_result if last_choice_result else "（开局）"}
 
 请生成以下 JSON，每个字段含义：
-- "story": 本轮场景描述（**120-200字**，必须自然衔接上一轮的结果，体现 Python 能力差距或 AI 爆发的影响。要包含具体的环境、人物或事件细节，让故事有沉浸感。）
+- "story": 本轮场景描述（120-200字，必须自然衔接上一轮的结果，体现 Python 能力差距或 AI 爆发的影响。要包含具体的环境、人物或事件细节，让故事有沉浸感。）
 - "A": {{
     "text": "选项 A 的文字（20字内，要体现风险和收益）",
     "immediate_story": "玩家选 A 后立刻发生的故事（60-100字，详细描述选择带来的直接后果）",
@@ -135,26 +135,28 @@ def _call_zhipu_api(player, round_num, memory, last_choice_result):
         start = content.find('{')
         end = content.rfind('}') + 1
         if start != -1 and end != 0:
-            json_str = content[start:end]
-            scenario = json.loads(json_str)
+            json_str = content[start:end]   # 截取JSON部分
+            scenario = json.loads(json_str) # 解析为Python字典
         else:
             raise ValueError("未找到有效的 JSON")
     except Exception as e:
         print(f"JSON 解析失败: {e}\n原始内容: {content}")
-        raise
+        raise   # 抛出异常,让上层使用模拟剧情
 
     if not all(k in scenario for k in ("story", "A", "B")):# 检查 JSON 是否完整，没招了，要成功啊
         raise ValueError("AI 返回的 JSON 缺少 story/A/B 字段")
-    for opt in ("A", "B"):
-        if "text" not in scenario[opt] or "effect" not in scenario[opt]:
+    
+    for opt in ("A", "B"):  # 检查选项字段，补全一下
+        if "text" not in scenario[opt] or "effect" not in scenario[opt]:#使用了py字典的setdefault()方法来实现智能补全
             scenario[opt].setdefault("text", "继续前进")
-            scenario[opt].setdefault("effect", {})
+            scenario[opt].setdefault("effect", {})  # 补全为无影响
             scenario[opt].setdefault("immediate_story", scenario[opt]["text"])
         if "immediate_story" not in scenario[opt]:
             scenario[opt]["immediate_story"] = scenario[opt]["text"]
     
     print("剧情生成完成！\n")
     return scenario
+
 def _generate_detailed_ending_by_rules(player, history):
     # 4-结局草稿
     w, s, h, l = player.wealth, player.skill, player.health, player.luck
@@ -268,19 +270,29 @@ def _generate_detailed_ending_by_rules(player, history):
     return ending_text
 
 def _extract_key_events(history):# 提取关键事件
+
     if not history:
         return []
     events = []
+
     for record in history[-5:]: # 提取属性变化较大的部分
-        changes = re.findall(r'(\w+):\s*([+-]?\d+)', record)
+        changes = re.findall(r'(\w+):\s*([+-]?\d+)', record)#正则：re.findall()	查找所有匹配，返回列表
+        '''
+        (\w+): 捕获属性名(如 wealth, health)
+        :\s*: 匹配冒号和可选空格
+        ([+-]?\d+): 捕获数字，可能为正或负
+        '''
+
         big_changes = [f"{attr}{delta}" for attr, delta in changes if abs(int(delta)) >= 10]
         if big_changes:
-            events.append(f"• 重大转折：{', '.join(big_changes)}")
+            events.append(f"• 重大转折：{', '.join(big_changes)}")#关键事件
+
         else:
-            choice_match = re.search(r'选择了([AB]) - (.*?)[。.]', record)
+            choice_match = re.search(r'选择了([AB]) - (.*?)[。.]', record)#re.search()查找第一个匹配，Match对象
             if choice_match:
                 choice_letter, choice_text = choice_match.group(1), choice_match.group(2)
                 events.append(f"• 第{choice_letter}选项：{choice_text}")
+
     unique_events = []
     for e in events:
         if e not in unique_events:
@@ -310,6 +322,7 @@ def generate_ending(player, history):
             temperature=0.7,
             max_tokens=800,
         )
+        
         polished = response.choices[0].message.content.strip()
         if len(polished) > 100:  # 确保润色有效
             return polished
@@ -333,3 +346,22 @@ def _get_mock_scenario(round_num):# 模拟场景
         }
     }
     return base
+
+'''
+response (ChatCompletion对象)
+├── id: "chatcmpl-xxx"              # 请求ID
+├── model: "glm-4-flash"            # 使用的模型
+├── created: 1234567890             # 时间戳
+├── choices: [                      # 候选回答列表(数组)
+│   └── [0]                         # 第一个候选(最常用)
+│       ├── index: 0                # 索引
+│       ├── message:                # 消息对象
+│       │   ├── role: "assistant"   # 角色
+│       │   └── content: "..."      # 文本内容(核心)
+│       └── finish_reason: "stop"   # 结束原因
+├── usage:                          # Token使用情况
+│   ├── prompt_tokens: 100          # 输入token数
+│   ├── completion_tokens: 200      # 输出token数
+│   └── total_tokens: 300           # 总计
+└── object: "chat.completion"       # 对象类型
+'''

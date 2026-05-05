@@ -1,37 +1,42 @@
 import model as m
 import ai_client as ai
 
-class GameEngine:
-    def __init__(self, player, total_rounds=5):
+class GameEngine:   # 游戏引擎
+    def __init__(self, player, total_rounds=5):# 初始化游戏引擎
         self.player = player
         self.total_rounds = total_rounds
         self.current_round = 0
         self.game_over = False
         self.final_ending = None
-        self.history = []
-        self.last_immediate = None
+        self.history = []   #列表
+        self.last_immediate = None  # 上一次的即时故事
         self.current_scenario = None
 
     def start_game(self):
+        #   开始游戏状态
         self.current_round = 0
         self.history = []
         self.last_immediate = None
         opening = ai.generate_opening(self.player)
         return opening
 
-    def get_current_scenario(self):
+    def get_current_scenario(self): 
+        # 获取当前场景
         if self.current_scenario is None:
             recent_history = self.history[-3:] if self.history else []
             memory = "\n".join(recent_history)
+
             self.current_scenario = ai.generate_scenario(
                 self.player,
                 self.current_round + 1,
                 memory,
                 self.last_immediate
             )
+            
         return self.current_scenario
 
     def process_turn(self, choice):
+        # 处理玩家选择
         if self.game_over:
             return True, "游戏已经结束。", "", None, None
 
@@ -44,7 +49,7 @@ class GameEngine:
         self.player.apply_effect(effect)
 
 
-        if not self.player.is_alive():
+        if not self.player.is_alive():# 判断玩家是否死亡
             self.game_over = True
 
             failed_attr = []
@@ -84,3 +89,16 @@ class GameEngine:
             "history": self.history,
             "ending": self.final_ending
         }
+    
+'''
+GameEngine (游戏引擎)
+├── 状态管理 (属性)
+├── 游戏流程控制 (方法)
+│   ├── start_game()      - 开始游戏
+│   ├── get_current_scenario() - 获取当前场景
+│   ├── process_turn()    - 处理玩家选择
+│   └── get_final_state() - 获取最终状态
+└── 协作模块
+    ├── ai_client         - AI剧情生成
+    └── model.Player      - 玩家属性管理
+'''
